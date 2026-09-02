@@ -11,8 +11,7 @@ TAG_AFILIADO = os.getenv("TAG_AFILIADO", "sua_tag-20")
 
 
 async def send_mensageAmazon(Mensage: str, Image: str):
-    bot = Bot(token=BOT_TOKEN)
-
+    bot = Bot(token=BOT_TOKEN)    
     try:
         await bot.send_photo(
             chat_id=CHAT_ID,
