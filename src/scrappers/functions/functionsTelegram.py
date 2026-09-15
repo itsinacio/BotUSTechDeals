@@ -1,5 +1,4 @@
 import os
-import re
 from aiogram import Bot
 from dotenv import load_dotenv
 
@@ -7,7 +6,6 @@ load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
-TAG_AFILIADO = os.getenv("TAG_AFILIADO", "sua_tag-20")  
 
 
 async def send_mensageAmazon(Mensage: str, Image: str):
@@ -19,8 +17,6 @@ async def send_mensageAmazon(Mensage: str, Image: str):
             caption=Mensage,
             parse_mode="HTML",
         )
-        print("✅ OK - Mensagem enviada com link formatado!")
-
     except Exception as e:
         print(f"❌ Erro ao enviar mensagem: {e}")
 

@@ -1,0 +1,4 @@
+aiogram==3.30.0
+playwright==1.62.0
+psycopg2-binary==2.9.13
+python-dotenv==1.2.2
