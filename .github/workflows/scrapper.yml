@@ -1,42 +1,41 @@
 name: Scraper Bot
 
 on:
-  schedule:
-    - cron: '0 * * * *'
-  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
 
-# Trava de concorrência: impede mais de 1 robô rodando ao mesmo tempo
 concurrency:
-  group: amazon-scraper-group
-  cancel-in-progress: false # Garante que a execução atual termine antes de qualquer coisa
+  group: amazon-scraper-group
+  cancel-in-progress: false
 
 jobs:
-  scrape:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Baixar código
-        uses: actions/checkout@v4
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
 
-      - name: Configurar Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
 
-      - name: Instalar dependências do Python
+      - name: Instalar dependências do Python
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Instalar navegadores do Playwright
-        run: |
-          npx playwright install chromium
-          npx playwright install-deps chromium
+      - name: Instalar navegadores do Playwright
+        run: |
+          npx playwright install chromium
+          npx playwright install-deps chromium
 
-      - name: Executar Robô
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          TAG_AFILIADO_AMAZON: ${{ secrets.TAG_AFILIADO_AMAZON }}
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          CHAT_ID: ${{ secrets.CHAT_ID }}
-        run: python src/main.py
+      - name: Executar Robô
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          TAG_AFILIADO_AMAZON: ${{ secrets.TAG_AFILIADO_AMAZON }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: python src/main.py
