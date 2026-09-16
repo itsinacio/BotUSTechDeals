@@ -1,10 +1,8 @@
 import asyncio
-from scrappers.functions.functionsTelegram import send_mensage
+from scrappers.scrapAmazon import fluxo_completo_amazon
 
 async def main():
-    texto_teste = (
-        "🔥 **TESTE DO BOT COM AIOGRAM!**\n\n"
-    )
+    await fluxo_completo_amazon()
 
 if __name__ == "__main__":
     asyncio.run(main())
