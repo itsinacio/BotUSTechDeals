@@ -11,6 +11,7 @@ def obter_conexao():
     return psycopg2.connect(DATABASE_URL,connect_timeout=10)
 
 def validar_oferta(conn,id_produto: str, preco: float, desconto: int, plataforma: str = 'amazon') -> bool:
+    cursor = None
     try:
         cursor = conn.cursor()
         # 1. Consulta histórico no Neon

@@ -55,7 +55,7 @@ async def capturarEndpoints(response):
 async def fluxo_completo_amazon():
     async with async_playwright() as p:
         browser = await p.chromium.launch(
-            headless=False, 
+            headless=True, 
             args=["--disable-blink-features=AutomationControlled", "--disable-infobars"]
         )
         
