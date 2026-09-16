@@ -10,37 +10,49 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 def obter_conexao():
     return psycopg2.connect(DATABASE_URL,connect_timeout=10)
 
-def validar_e_salvar_oferta(conn,id_produto: str, nome: str, preco: float, desconto: int, plataforma: str = 'amazon') -> bool:
-    cursor = conn.cursor()
-    
-    # 1. Consulta histórico no Neon
-    query_busca = """
-        SELECT preco, atualizado_em 
-        FROM produtos_enviados 
-        WHERE id_produto = %s AND plataforma = %s;
-    """
-    cursor.execute(query_busca, (id_produto, plataforma))
-    registro = cursor.fetchone()
+def validar_oferta(conn,id_produto: str, preco: float, desconto: int, plataforma: str = 'amazon') -> bool:
+    try:
+        cursor = conn.cursor()
+        # 1. Consulta histórico no Neon
+        query_busca = """
+            SELECT preco, atualizado_em 
+            FROM produtos_enviados 
+            WHERE id_produto = %s AND plataforma = %s;
+        """
+        cursor.execute(query_busca, (id_produto, plataforma))
+        registro = cursor.fetchone()
 
-    deve_enviar = False
+        deve_enviar = False
 
-    # Regra 1: Produto inédito
-    if not registro:
-        deve_enviar = True
-    else:
-        preco_banco, atualizado_em = registro
-        preco_banco = float(preco_banco)
-        dias_desde_envio = (datetime.now() - atualizado_em).days
-
-        # Regra 2: Queda de preço em relação ao banco
-        if preco < preco_banco:
+        # Regra 1: Produto inédito
+        if not registro:
             deve_enviar = True
-        # Regra 3: Reenvio de Super Oferta (>= 50% OFF) após 7 dias
-        elif desconto >= 50 and dias_desde_envio >= 7:
-            deve_enviar = True
+        else:
+            preco_banco, atualizado_em = registro
+            preco_banco = float(preco_banco)
+            dias_desde_envio = (datetime.now() - atualizado_em).days
 
-    # 2. Se aprovado, insere/atualiza no Neon
-    if deve_enviar:
+            # Regra 2: Queda de preço em relação ao banco
+            if preco < preco_banco:
+                deve_enviar = True
+            # Regra 3: Reenvio de Super Oferta (>= 50% OFF) após 7 dias
+            elif desconto >= 50 and dias_desde_envio >= 7:
+                deve_enviar = True
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"Erro no banco: {e}")
+        raise e
+    finally:
+        if cursor:
+            cursor.close()
+    return deve_enviar
+
+def salvar_oferta(conn,id_produto: str, nome: str, preco: float, desconto: int, plataforma: str = 'amazon'):
+    cursor = None
+    try:
+        cursor = conn.cursor()
         query_upsert = """
             INSERT INTO produtos_enviados (id_produto, plataforma, nome, preco, desconto, atualizado_em)
             VALUES (%s, %s, %s, %s, %s, NOW())
@@ -49,13 +61,17 @@ def validar_e_salvar_oferta(conn,id_produto: str, nome: str, preco: float, desco
                 preco = EXCLUDED.preco, 
                 desconto = EXCLUDED.desconto, 
                 atualizado_em = NOW();
-        """
+            """
         cursor.execute(query_upsert, (id_produto, plataforma, nome, preco, desconto))
         conn.commit()
-
-    cursor.close()
-
-    return deve_enviar
+    except Exception as e:
+            if conn:
+                conn.rollback()
+            print(f"Erro no banco: {e}")
+            raise e
+    finally:
+        if cursor:
+            cursor.close()
 
 def limpar_produtos_antigos():
     """Remove do banco todos os produtos registrados há mais de 30 dias."""
@@ -73,7 +89,12 @@ def limpar_produtos_antigos():
         conn.commit()
         
     except Exception as e:
-        print(f"❌ Erro ao realizar limpeza no banco: {e}")
+        if conn:
+            conn.rollback()
+        print(f"Erro no banco: {e}")
+        raise e
     finally:
+        if cursor:
+            cursor.close()
         if conn:
             conn.close()

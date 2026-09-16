@@ -25,7 +25,6 @@ async def executar_scroll_pagina(page, lista_endpoints, limite_tentativas=15):
         if await verMais.is_visible():
             await page.wait_for_timeout(random.randint(300, 800))
             await verMais.click()
-        
         # VERIFICAÇÃO DINÂMICA: Chegaram pacotes novos no vetor?
         total_pacotes_atual = len(lista_endpoints)
         
@@ -56,7 +55,7 @@ async def capturarEndpoints(response):
 async def fluxo_completo_amazon():
     async with async_playwright() as p:
         browser = await p.chromium.launch(
-            headless=True, 
+            headless=False, 
             args=["--disable-blink-features=AutomationControlled", "--disable-infobars"]
         )
         
@@ -78,7 +77,7 @@ async def fluxo_completo_amazon():
             
             await page.goto("https://www.amazon.com.br/")
             await page.get_by_role("link", name="Ofertas do Dia").click()
-            await page.get_by_test_id("discount-asin-grid").get_by_text("Departamento").is_visible()
+            await page.get_by_test_id("discount-asin-grid").get_by_text("Departamento").wait_for(state="visible")
             await page.get_by_text("Ver mais").nth(1).click()
             
             # --- CATEGORIA 1: Computadores e Informática ---
@@ -140,14 +139,18 @@ async def fluxo_completo_amazon():
                 asin = extrairASIN(link_relativo)
                 
                 # Joga a chamada do banco para uma thread paralela para não congelar o async
-                if asin:
+                if asin and desconto_real > 0:
                     aprovado = await asyncio.to_thread(
-                        validar_e_salvar_oferta,conn, asin, nome, precoNovo, desconto_real, 'amazon'
+                        validar_oferta,conn, asin, precoNovo, desconto_real, 'amazon'
                     )
                     
-                    if aprovado and desconto_real > 0:
+                    if aprovado :
                         copy = f'<b>{nome}</b>\n\n❌<s>De: R${precoAntigo:.2f}</s>\n💥<b>Por: R${precoNovo:.2f}</b> (-{desconto_real}%)\n\n🛒<a href="{urlVenda}">Clique para comprar</a>'
-                        await send_mensageAmazon(copy, urlImagem)
+                        enviado = await send_mensageAmazon(copy, urlImagem)
+                        if enviado:
+                            await asyncio.to_thread(
+                            salvar_oferta,conn, asin, nome, precoNovo, desconto_real, 'amazon'
+                            )
                         await asyncio.sleep(3)
             except Exception as e:
                 print(f"⚠️ Erro ao processar '{produto.get('title', 'Desconhecido')[:20]}': {e}")
