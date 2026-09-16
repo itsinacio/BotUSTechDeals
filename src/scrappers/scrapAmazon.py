@@ -6,6 +6,7 @@ from .functions.functionsTelegram import send_mensageAmazon
 from dotenv import load_dotenv
 from .database.database import *
 import re
+import html
 
 endpoints = []
 load_dotenv()
@@ -109,6 +110,7 @@ async def fluxo_completo_amazon():
 
         except Exception as e:
             print(f"\n❌ Ocorreu um erro no meio do caminho: {e}")
+            raise e
         
         finally:
             await browser.close()
@@ -118,7 +120,7 @@ async def fluxo_completo_amazon():
         listaProdutos = json_data.get('products', [])
         for produto in listaProdutos:
             try:
-                nome = produto['title']
+                nome = html.escape(produto['title'])
                 
                 # Leitura segura usando .get() para evitar KeyErrors silenciosos
                 price_dict = produto.get('price', {})
@@ -154,6 +156,7 @@ async def fluxo_completo_amazon():
                         await asyncio.sleep(3)
             except Exception as e:
                 print(f"⚠️ Erro ao processar '{produto.get('title', 'Desconhecido')[:20]}': {e}")
+                raise e
                 continue
     conn.close()
 
