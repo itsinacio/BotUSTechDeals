@@ -156,7 +156,6 @@ async def fluxo_completo_amazon():
                         await asyncio.sleep(3)
             except Exception as e:
                 print(f"⚠️ Erro ao processar '{produto.get('title', 'Desconhecido')[:20]}': {e}")
-                raise e
                 continue
     conn.close()
 
