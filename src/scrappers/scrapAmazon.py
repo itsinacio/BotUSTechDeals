@@ -96,12 +96,15 @@ async def fluxo_completo_amazon():
             page.remove_listener("response", capturarEndpoints)
             
             # --- CATEGORIA 2: Eletrônicos e Tecnologia ---
-            await filtroComputadoresEInfor.click() # Desmarca a anterior se necessário
+            await filtroComputadoresEInfor.click() # Desmarca filtro computadores e infor
+            await filtro4Extrelas.first.click()  #Desmarca filtro 4 estrelas 
             
-            # Religa a escuta e clica no novo filtro
-            page.on("response", capturarEndpoints)
             await filtroEletronicosETecno.click()
             await filtroEletronicosETecno.first.wait_for(state="visible")
+            
+            page.on("response", capturarEndpoints)
+            await filtro4Extrelas.click()
+            await page.wait_for_selector('div[data-testid="product-card"]', state="visible")
             
             # Roda o scroll dinâmico novamente
             await executar_scroll_pagina(page, endpoints)
