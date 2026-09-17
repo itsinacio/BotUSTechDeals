@@ -13,7 +13,7 @@ load_dotenv()
 TAG_AFILIADO = os.getenv("TAG_AFILIADO_AMAZON")
 
 async def executar_scroll_pagina(page, lista_endpoints, limite_tentativas=15):
-    verMais = page.get_by_text("Ver mais ofertas")
+    verMais = page.get_by_test_id("load-more-footer")
     scrolls_sem_dados_novos = 0
     total_pacotes_anterior = len(lista_endpoints)
     
@@ -56,7 +56,7 @@ async def capturarEndpoints(response):
 async def fluxo_completo_amazon():
     async with async_playwright() as p:
         browser = await p.chromium.launch(
-            headless=True, 
+            headless=False, 
             args=["--disable-blink-features=AutomationControlled", "--disable-infobars"]
         )
         
@@ -76,10 +76,9 @@ async def fluxo_completo_amazon():
             filtroComputadoresEInfor = page.get_by_test_id("filter-departments-16339927011")
             filtroEletronicosETecno = page.get_by_test_id("filter-departments-16209063011")
             
-            await page.goto("https://www.amazon.com.br/")
-            await page.get_by_role("link", name="Ofertas do Dia").click()
-            await page.get_by_test_id("discount-asin-grid").get_by_text("Departamento").wait_for(state="visible")
-            await page.get_by_text("Ver mais").nth(1).click()
+            await page.goto("https://www.amazon.com.br/deals?ref_=nav_cs_gb")
+            await page.get_by_test_id("discount-asin-grid").wait_for(state="visible")
+            await page.locator("button[aria-labelledby='see-more-departments-label']").click()
             
             # --- CATEGORIA 1: Computadores e Informática ---
             await filtroComputadoresEInfor.click()
@@ -102,7 +101,7 @@ async def fluxo_completo_amazon():
             # Religa a escuta e clica no novo filtro
             page.on("response", capturarEndpoints)
             await filtroEletronicosETecno.click()
-            await page.wait_for_timeout(2000)
+            await filtroEletronicosETecno.first.wait_for(state="visible")
             
             # Roda o scroll dinâmico novamente
             await executar_scroll_pagina(page, endpoints)
