@@ -74,7 +74,6 @@ async def fluxo_completo_amazon():
         try:
             filtro4Extrelas = page.get_by_test_id("filter-reviewRating-4")
             filtroComputadoresEInfor = page.get_by_test_id("filter-departments-16339927011")
-            filtroEletronicosETecno = page.get_by_test_id("filter-departments-16209063011")
             
             await page.goto("https://www.amazon.com.br/deals?ref_=nav_cs_gb")
             await page.get_by_test_id("discount-asin-grid").wait_for(state="visible")
@@ -88,27 +87,11 @@ async def fluxo_completo_amazon():
             
             await filtro4Extrelas.click()
             await page.wait_for_selector('div[data-testid="product-card"]', state="visible")
-            
             # Roda o scroll dinâmico passando a lista de endpoints
             await executar_scroll_pagina(page, endpoints)
-            
-            # Desliga a escuta antes de trocar de aba
+            # Desliga a escuta
             page.remove_listener("response", capturarEndpoints)
             
-            # --- CATEGORIA 2: Eletrônicos e Tecnologia ---
-            await filtroComputadoresEInfor.click() # Desmarca filtro computadores e infor
-            await filtro4Extrelas.first.click()  #Desmarca filtro 4 estrelas 
-            
-            await filtroEletronicosETecno.click()
-            await filtroEletronicosETecno.first.wait_for(state="visible")
-            
-            page.on("response", capturarEndpoints)
-            await filtro4Extrelas.click()
-            await page.wait_for_selector('div[data-testid="product-card"]', state="visible")
-            
-            # Roda o scroll dinâmico novamente
-            await executar_scroll_pagina(page, endpoints)
-            page.remove_listener("response", capturarEndpoints)
 
         except Exception as e:
             print(f"\n❌ Ocorreu um erro no meio do caminho: {e}")
